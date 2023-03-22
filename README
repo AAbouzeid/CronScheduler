@@ -1,0 +1,88 @@
+REQUIREMENTS
+
+1. Python3
+2. unittest
+
+--------------------------------------------------------------------------------------------------------------------------
+
+BRIEF DESCRIPTION 
+
+This is an implementation of Cron Scheduler using Python. In this implementation the Scheduler is hosted on a 
+server thread which accepts connections from multiple clients, each client can send a request to the server, and
+the server is able to concurrently handle all the requests and pass them to a scheduler object which can in turn
+handle those concurrent requests involving jobs(ADD/Remove jobs) without exhibiting any Race conditions, or inconsistencies.
+
+--------------------------------------------------------------------------------------------------------------------------
+
+COMPONENTS
+
+1. Server.py - This script receives client connection requests, and concurrently runs/handles the various requests, and
+forwarding them to the Scheduler Object
+
+2. Client.py - This is the script that the client should run to be able to access the scheduler and interact with it.
+a pre-requisite for this client to run as expected is that the Server.py to be already running and accepting connections.
+
+3. Scheduler.py - The implementation of the Scheduler - holds a list of all the currently active Cron jobs - handles Concurrency
+
+4. CronJob.py - The implementation of a single Cron Job - holds the various Meta data about a specific job
+
+5. Utils.py - A Utility file that contains helper functions
+
+--------------------------------------------------------------------------------------------------------------------------
+
+USAGE - In order.
+
+1. To create the Scheduler, initialize it, start the server, and receive requests from Clients run the following
+command - Python3 Server.py
+
+2. To add a job to be executed periodically - python3 Client.py ADD JOB_ID INTERVAL FREQUENCY JOB_FUNCTION_NAME FUNCTION_IMPLEMENTATION_PATH
+
+3. To stop a job from being executed periodically - python3 Client.py REMOVE JOB_ID
+
+4. Sample: python3 Client.py ADD job_1 1s 10s func1 /Tests/test_func1.py ----- python3 Client.py REMOVEs job_1
+
+--------------------------------------------------------------------------------------------------------------------------
+
+DESIGN DECISIONS
+
+1. Usage of Jobs Dictionary - Implemented internally as a Hashmap
+    a. Advantage of Dictionary - Average case Insertion and Deletion:: O( 1 )
+    
+    b. Drawback of Dictionary - If the jobs ids' hashings cause a lot of collisions the retrieval time of each key accessing in the dictionary won't be O( 1 ) anymore causing significant slow downs
+
+    c. Alternatives:
+        i. Usage of a sorted lists instead of a dictionary for holding the ids
+            1. Advantages: 
+                a. Worst-case insertion: O( log( n ) ) 
+                b. Worst-case deletion: O( log( n ) )
+            2. Drawbacks:
+                a. Needs careful handling to keep the list sorted
+    
+    D. Decision: I made the decision to use a Dictionary over a sorted list. Since the expected input for job ids are numbers which are not distributed in any specific way (assuming uniform distribution of numbers - job1, 2, 3, 4...)
+    Collisions are to occur in a way that would result in a uniformly distributed collision lists (Since Python solves collision by random probing) hence a more or less constant lookup time.
+
+2. Usage of Threading.lock() to synchronize the access to the critical section and the shared resource (The Jobs Dictionary)
+    a. Advantages - Very simple interface can be locked and unlocked to access the shared resource without a lot of
+    book-keeping or external manipulation
+
+    b. Alternatives:
+        i. Semaphore:
+            1. Wait, Signal Capability is quiet useful but in some sense an overkill for this application
+
+3. Usage of a python queue.Queue (Multiprocessing Queue) as a signaling mechanism. 
+The queue was used in the Cron Job class as signaling to the job that a REMOVE request has been made for it
+to be removed from the jobs list so if the thread is sleeping, the sleeping is interrupted, and the thread is
+terminated.
+
+4. Usage of Client-Server Architecture: The Scheduler class was wrapped in a Client-Server model to ease the interaction with the Scheduler and allow some of the preprocessing needed to be handled in the server, and the Scheduler to be used as a blackbox inside the 
+server.
+
+--------------------------------------------------------------------------------------------------------------------------
+
+MISC.
+
+1. To kill the server gracefully use keyboard interruption (CTRL + C) which is handled inside the server using signal handlers and would gracefully close all sockets associated and terminate the process
+    a. Sometimes an error in sockets occur and there is a need to manually kill the server process. use the command "ps -ef | grep python" to show all running python processes
+    b. locate the server.py pid and use the command "kill PID" to end it, and they port would be cleared.
+
+2. Testing: Test_Scheduler.py is a testing Suite leveraging the unittest, to test various functionalities of the Scheduler, and the Server.
