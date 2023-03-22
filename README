@@ -31,6 +31,10 @@ a pre-requisite for this client to run as expected is that the Server.py to be a
 
 5. Utils.py - A Utility file that contains helper functions
 
+6. TestScheduler.py - A Testing Suite to make sure the various aspects of the Application are working.
+
+7. test_func(1-5) - Sample Jobs
+
 --------------------------------------------------------------------------------------------------------------------------
 
 USAGE - In order.
