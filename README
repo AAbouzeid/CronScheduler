@@ -12,6 +12,9 @@ server thread which accepts connections from multiple clients, each client can s
 the server is able to concurrently handle all the requests and pass them to a scheduler object which can in turn
 handle those concurrent requests involving jobs(ADD/Remove jobs) without exhibiting any Race conditions, or inconsistencies.
 
+To use the Scheduler the Server instance must be ran (which internally creates a scheduler instance) - refer to the USAGE
+section below.
+
 --------------------------------------------------------------------------------------------------------------------------
 
 COMPONENTS
